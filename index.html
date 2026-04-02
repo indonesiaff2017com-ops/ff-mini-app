@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<title>FF Lookup | Uid Search 🔍</title>
+<meta name="description" content="Free Fire Player Info Lookup by UID"/>
+<meta name="author" content="Sazid 17k"/>
+<meta name="theme-color" content="#0b0d18"/>
+<meta property="og:title" content="FF Lookup — Uid Search 🔍"/>
+<meta property="og:description" content="Free Fire player info by UID instantly"/>
+<meta property="og:image" content="https://i.postimg.cc/sXmD8Rc9/image.jpg"/>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0b0d18;--bg2:#10131f;--bg3:#161926;
+  --border:rgba(255,200,50,0.15);
+  --gold:#ffd700;--gold2:#ffb300;--orange:#ff6b00;
+  --red:#ff3d3d;--green:#00e676;--blue:#00bfff;
+  --text:#e8eaf0;--muted:#6b7280;
+  --glow:0 0 24px rgba(255,215,0,0.25);
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,215,0,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,215,0,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 0 110px}
+
+/* HEADER */
+.header{padding:22px 20px 0;text-align:center}
+.logo-wrap{display:inline-flex;align-items:center;gap:10px;margin-bottom:4px}
+.logo-icon{width:42px;height:42px;background:linear-gradient(135deg,var(--gold),var(--orange));border-radius:12px;display:grid;place-items:center;font-size:22px;box-shadow:var(--glow)}
+.logo-txt{font-family:'Orbitron',monospace;font-size:19px;font-weight:900;background:linear-gradient(90deg,var(--gold),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px}
+.header-sub{font-size:11px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:20px}
+
+/* SEARCH */
+.search-wrap{padding:0 16px;margin-bottom:14px}
+.search-box{background:var(--bg2);border:1.5px solid var(--border);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 4px 24px rgba(0,0,0,0.4)}
+.search-label{font-size:11px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;font-weight:600}
+.input-row{display:flex;gap:10px}
+.uid-input{flex:1;background:var(--bg3);border:1.5px solid rgba(255,215,0,0.1);border-radius:10px;padding:13px 14px;color:var(--text);font-family:'Orbitron',monospace;font-size:14px;letter-spacing:2px;outline:none;transition:border-color .2s}
+.uid-input::placeholder{color:var(--muted);font-family:'Rajdhani',sans-serif;letter-spacing:1px}
+.uid-input:focus{border-color:rgba(255,215,0,0.4)}
+.region-sel{background:var(--bg3);border:1.5px solid rgba(255,215,0,0.1);border-radius:10px;padding:13px 8px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;outline:none;cursor:pointer;width:78px}
+.region-sel option{background:var(--bg2)}
+.search-btn{width:100%;background:linear-gradient(135deg,var(--gold),var(--orange));border:none;border-radius:12px;padding:14px;color:#000;font-family:'Orbitron',monospace;font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .2s,transform .1s}
+.search-btn:active{transform:scale(0.98);opacity:.9}
+.search-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* LOADING */
+.loading{display:none;text-align:center;padding:32px 20px}
+.loading.show{display:block}
+.spinner{width:48px;height:48px;border:3px solid rgba(255,215,0,0.1);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-family:'Orbitron',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ERROR */
+.err-box{display:none;margin:0 16px 12px;background:rgba(255,61,61,0.1);border:1px solid rgba(255,61,61,0.3);border-radius:12px;padding:14px;color:var(--red);font-size:14px;font-weight:600;text-align:center}
+.err-box.show{display:block}
+
+/* RESULT */
+.result{display:none;padding:0 16px;flex-direction:column;gap:12px;animation:fadeUp .4s ease}
+.result.show{display:flex}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* CARD */
+.card{background:var(--bg2);border:1.5px solid var(--border);border-radius:16px;overflow:hidden}
+.card-hd{background:linear-gradient(90deg,rgba(255,215,0,0.08),transparent);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px}
+.card-ic{width:32px;height:32px;background:linear-gradient(135deg,var(--gold),var(--orange));border-radius:8px;display:grid;place-items:center;font-size:14px;color:#000;flex-shrink:0}
+.card-ttl{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--gold);text-transform:uppercase}
+.card-body{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+
+/* PLAYER NAME ROW */
+.pname-row{display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,215,0,0.08)}
+.p-avatar{width:52px;height:52px;background:linear-gradient(135deg,var(--gold),var(--orange));border-radius:12px;display:grid;place-items:center;font-size:24px;flex-shrink:0}
+.p-name{font-family:'Orbitron',monospace;font-size:15px;font-weight:700;color:var(--gold);word-break:break-all}
+.p-uid{font-size:11px;color:var(--muted);letter-spacing:1px;margin-top:3px}
+
+/* INFO ROW */
+.ir{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.il{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);font-weight:500;flex-shrink:0}
+.il i{width:14px;color:var(--gold2)}
+.iv{font-size:14px;font-weight:700;color:var(--text);text-align:right;word-break:break-all}
+.iv.gold{color:var(--gold)}.iv.green{color:var(--green)}.iv.blue{color:var(--blue)}.iv.orange{color:var(--orange)}
+.div{height:1px;background:rgba(255,215,0,0.07)}
+
+/* SEASON BADGE */
+.season-badge{display:flex;align-items:center;gap:8px;background:rgba(0,191,255,0.08);border:1px solid rgba(0,191,255,0.2);border-radius:10px;padding:10px 14px}
+.season-badge i{color:var(--blue)}
+.season-badge span{font-size:13px;color:var(--blue);font-weight:600}
+
+/* FOOTER */
+footer{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;padding:10px 16px 14px;background:rgba(11,13,24,0.88);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(255,215,0,0.1);z-index:100}
+.ft-inner{display:flex;align-items:center;justify-content:space-between}
+.ft-dev{display:flex;align-items:center;gap:8px}
+.ft-avatar{width:34px;height:34px;border-radius:50%;border:2px solid var(--gold);object-fit:cover}
+.ft-name{font-size:12px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:4px}
+.ft-badge{color:#1d9bf0;font-size:11px}
+.ft-role{font-size:10px;color:var(--muted)}
+.ft-tg{width:34px;height:34px;border-radius:8px;background:rgba(29,155,240,0.15);color:#1d9bf0;display:grid;place-items:center;font-size:15px;text-decoration:none;transition:transform .2s}
+.ft-tg:active{transform:scale(0.9)}
+
+/* MODAL */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,0.82);backdrop-filter:blur(10px);z-index:999;display:grid;place-items:center;padding:20px}
+.modal{background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;max-width:310px;width:100%;text-align:center;animation:mIn .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes mIn{from{opacity:0;transform:scale(0.85)}to{opacity:1;transform:scale(1)}}
+.m-logo{width:66px;height:66px;background:linear-gradient(135deg,var(--gold),var(--orange));border-radius:16px;display:grid;place-items:center;font-size:30px;margin:0 auto 16px;box-shadow:var(--glow)}
+.m-title{font-family:'Orbitron',monospace;font-size:13px;font-weight:900;color:var(--gold);letter-spacing:1px;margin-bottom:6px}
+.m-sub{font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6}
+.m-disc{background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.15);border-radius:10px;padding:10px 14px;font-size:11px;color:var(--muted);margin-bottom:18px;line-height:1.5}
+.m-btns{display:flex;gap:10px}
+.m-btn{flex:1;padding:12px;border-radius:10px;border:none;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .2s,transform .1s}
+.m-btn:active{transform:scale(0.97)}
+.m-btn.cls{background:var(--bg3);color:var(--text)}
+.m-btn.cnt{background:linear-gradient(135deg,#1d9bf0,#0070c9);color:#fff}
+</style>
+</head>
+<body>
+
+<!-- MODAL -->
+<div class="modal-ov" id="modal">
+  <div class="modal">
+    <div class="m-logo">🔍</div>
+    <div class="m-title">Uid Search 🔍</div>
+    <div class="m-sub">Developed by <strong style="color:var(--gold)">Sazid 17k</strong><br/>Senior Developer</div>
+    <div class="m-disc">⚠️ This tool is for educational &amp; professional use only.</div>
+    <div class="m-btns">
+      <button class="m-btn cls" onclick="document.getElementById('modal').style.display='none'">
+        <i class="fa fa-times"></i> Close
+      </button>
+      <a class="m-btn cnt" href="https://t.me/MdSazid17k" target="_blank">
+        <i class="fab fa-telegram"></i> Contact
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app">
+  <div class="header">
+    <div class="logo-wrap">
+      <div class="logo-icon">🔍</div>
+      <div class="logo-txt">UID SEARCH</div>
+    </div>
+    <div class="header-sub">Free Fire Player Lookup</div>
+  </div>
+
+  <div class="search-wrap">
+    <div class="search-box">
+      <div class="search-label"><i class="fa fa-search"></i> &nbsp;Player UID লিখো</div>
+      <div class="input-row">
+        <input class="uid-input" id="uidInput" type="number" placeholder="e.g. 2312730961" inputmode="numeric"/>
+        <select class="region-sel" id="regionSel">
+          <option value="">Auto</option>
+          <option value="BD">🇧🇩 BD</option>
+          <option value="IND">🇮🇳 IND</option>
+          <option value="ID">🇮🇩 ID</option>
+          <option value="SG">🇸🇬 SG</option>
+          <option value="PK">🇵🇰 PK</option>
+          <option value="BR">🇧🇷 BR</option>
+          <option value="US">🇺🇸 US</option>
+        </select>
+      </div>
+      <button class="search-btn" id="searchBtn" onclick="search()">
+        <i class="fa fa-bolt"></i> SEARCH PLAYER
+      </button>
+    </div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-txt">SEARCHING...</div>
+  </div>
+
+  <div class="err-box" id="errBox"></div>
+
+  <div class="result" id="result">
+
+    <!-- Account -->
+    <div class="card">
+      <div class="card-hd"><div class="card-ic"><i class="fa fa-user"></i></div><div class="card-ttl">Account Info</div></div>
+      <div class="card-body">
+        <div class="pname-row">
+          <div class="p-avatar">🎮</div>
+          <div>
+            <div class="p-name" id="rName">—</div>
+            <div class="p-uid" id="rUid">UID: —</div>
+          </div>
+        </div>
+        <div class="ir"><div class="il"><i class="fa fa-star"></i>Level</div><div class="iv gold" id="rLevel">—</div></div>
+        <div class="div"></div>
+        <div class="ir"><div class="il"><i class="fa fa-bolt"></i>EXP</div><div class="iv" id="rExp">—</div></div>
+        <div class="div"></div>
+        <div class="ir"><div class="il"><i class="fa fa-heart"></i>Likes</div><div class="iv orange" id="rLikes">—</div></div>
+        <div class="div"></div>
+        <div class="ir"><div class="il"><i class="fa fa-globe"></i>Region</div><div class="iv blue" id="rRegion">—</div></div>
+        <div class="div"></div>
+        <div class="ir"><div class="il"><i class="fa fa-venus-mars"></i>Gender</div><div class="iv" id="rGender">—</div></div>
+        <div class="div"></div>
+        <div class="ir"><div class="il"><i class="fa fa-calendar"></i>Created</div><div class="iv" id="rCreated">—</div></div>
+        <div class="div"></div>
+        <div class="ir"><div class="il"><i class="fa fa-clock"></i>Last Login</div><div class="iv" id="rLogin">—</div></div>
+      </div>
+    </div>
+
+    <!-- Rank -->
+    <div class="card">
+      <div class="card-hd"><div class="card-ic"><i class="fa fa-trophy"></i></div><div class="card-ttl">Rank Info</div></div>
+      <div class="card-body">
+        <div class="ir"><div class="il"><i class="fa fa-shield-alt"></i>BR Rank</div><div class="iv gold" id="rBrRank">—</div></div>
+        <div class="div"></div>
+        <div class="ir"><div class="il"><i class="fa fa-chart-line"></i>BR Points</div><div class="iv" id="rBrPts">—</div></div>
+        <div class="div"></div>
+        <div class="ir"><div class="il"><i class="fa fa-crosshairs"></i>CS Rank</div><div class="iv gold" id="rCsRank">—</div></div>
+        <div class="div"></div>
+        <div class="ir"><div class="il"><i class="fa fa-chart-bar"></i>CS Points</div><div class="iv" id="rCsPts">—</div></div>
+      </div>
+    </div>
+
+    <!-- Guild -->
+    <div class="card" id="guildCard">
+      <div class="card-hd"><div class="card-ic"><i class="fa fa-users"></i></div><div class="card-ttl">Guild Info</div></div>
+      <div class="card-body">
+        <div class="ir"><div class="il"><i class="fa fa-flag"></i>Name</div><div class="iv green" id="rGName">—</div></div>
+        <div class="div"></div>
+        <div class="ir"><div class="il"><i class="fa fa-hashtag"></i>Guild ID</div><div class="iv" id="rGId">—</div></div>
+        <div class="div"></div>
+        <div class="ir"><div class="il"><i class="fa fa-layer-group"></i>Level</div><div class="iv gold" id="rGLvl">—</div></div>
+      </div>
+    </div>
+
+    <!-- Equipped -->
+    <div class="card">
+      <div class="card-hd"><div class="card-ic"><i class="fa fa-tshirt"></i></div><div class="card-ttl">Equipped Items</div></div>
+      <div class="card-body">
+        <div class="ir"><div class="il"><i class="fa fa-id-badge"></i>Avatar ID</div><div class="iv" id="rAv">—</div></div>
+        <div class="div"></div>
+        <div class="ir"><div class="il"><i class="fa fa-image"></i>Banner ID</div><div class="iv" id="rBn">—</div></div>
+        <div class="div"></div>
+        <div class="ir"><div class="il"><i class="fa fa-medal"></i>BP Badge</div><div class="iv" id="rBdg">—</div></div>
+        <div class="div"></div>
+        <div class="ir"><div class="il"><i class="fa fa-crown"></i>BP ID</div><div class="iv" id="rBpId">—</div></div>
+      </div>
+    </div>
+
+    <div class="season-badge">
+      <i class="fa fa-calendar-check"></i>
+      <span id="rSeason">Season: —</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="ft-inner">
+    <div class="ft-dev">
+      <img class="ft-avatar" src="https://i.postimg.cc/sXmD8Rc9/image.jpg" alt="Sazid 17k"/>
+      <div>
+        <div class="ft-name">Sazid 17k <i class="fa fa-circle-check ft-badge"></i></div>
+        <div class="ft-role">Senior Developer</div>
+      </div>
+    </div>
+    <a class="ft-tg" href="https://t.me/MdSazid17k" target="_blank"><i class="fab fa-telegram"></i></a>
+  </div>
+</footer>
+
+<script>
+if(window.Telegram&&window.Telegram.WebApp){window.Telegram.WebApp.ready();window.Telegram.WebApp.expand();}
+
+const RANKS=[
+  [0,'Unranked'],[1,'Bronze I'],[10,'Bronze II'],[20,'Bronze III'],
+  [30,'Silver I'],[60,'Silver II'],[90,'Silver III'],
+  [120,'Gold I'],[180,'Gold II'],[240,'Gold III'],[300,'Gold IV'],
+  [400,'Platinum I'],[500,'Platinum II'],[600,'Platinum III'],[700,'Platinum IV'],
+  [800,'Diamond I'],[900,'Diamond II'],[1000,'Diamond III'],[1100,'Diamond IV'],
+  [1200,'Heroic'],[2000,'Grand Master'],[3000,'Challenger']
+];
+
+function rankName(r){
+  if(!r)return'Unranked';
+  let n='Unranked';
+  for(const[min,name]of RANKS){if(r>=min)n=name;}
+  return n;
+}
+function fmtDate(ts){
+  if(!ts)return'N/A';
+  return new Date(parseInt(ts)*1000).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+}
+function fmtNum(n){return(n||0).toLocaleString();}
+function set(id,v){const e=document.getElementById(id);if(e)e.textContent=v??'N/A';}
+function hideAll(){
+  document.getElementById('loading').classList.remove('show');
+  document.getElementById('errBox').classList.remove('show');
+  document.getElementById('result').classList.remove('show');
+}
+function showErr(msg){
+  hideAll();
+  const e=document.getElementById('errBox');
+  e.textContent=msg;e.classList.add('show');
+}
+
+async function search(){
+  const uid=document.getElementById('uidInput').value.trim();
+  const region=document.getElementById('regionSel').value;
+  const btn=document.getElementById('searchBtn');
+  if(!uid||uid.length<8){showErr('⚠️ সঠিক UID দাও (৮-১৩ সংখ্যা)');return;}
+  hideAll();
+  document.getElementById('loading').classList.add('show');
+  btn.disabled=true;
+  try{
+    let url=`/api?uid=${uid}`;
+    if(region)url+=`&region=${region}`;
+    const res=await fetch(url);
+    const d=await res.json();
+    if(!res.ok){showErr(d.error||'❌ সমস্যা হয়েছে, আবার চেষ্টা করো!');return;}
+    render(d,uid);
+  }catch(e){
+    showErr('🌐 নেটওয়ার্ক সমস্যা! আবার চেষ্টা করো।');
+  }finally{
+    document.getElementById('loading').classList.remove('show');
+    btn.disabled=false;
+  }
+}
+
+function render(d,uid){
+  const acc=d.AccountInfo||{};
+  const rank=d.AccountProfileInfo||{};
+  const eq=d.EquippedItemsInfo||{};
+  const soc=d.SocialInfo||{};
+  const g=d.GuildInfo||{};
+
+  set('rName',acc.AccountName||'Unknown');
+  set('rUid','UID: '+(soc.accountId||uid));
+  set('rLevel','Lv. '+(acc.AccountLevel||'N/A'));
+  set('rExp',fmtNum(acc.AccountEXP));
+  set('rLikes',fmtNum(acc.AccountLikes));
+  set('rRegion',acc.AccountRegion||'N/A');
+  set('rGender',(soc.gender||'').replace('Gender_','')||'N/A');
+  set('rCreated',fmtDate(acc.AccountCreateTime));
+  set('rLogin',fmtDate(acc.AccountLastLogin));
+
+  set('rBrRank',rankName(rank.BrMaxRank));
+  set('rBrPts',fmtNum(rank.BrRankPoint));
+  set('rCsRank',rankName(rank.CsMaxRank));
+  set('rCsPts',fmtNum(rank.CsRankPoint));
+
+  if(g.GuildID){
+    set('rGName',g.GuildName||'N/A');
+    set('rGId',g.GuildID);
+    set('rGLvl','Lv. '+(g.GuildLevel||'N/A'));
+    document.getElementById('guildCard').style.display='';
+  }else{
+    document.getElementById('guildCard').style.display='none';
+  }
+
+  set('rAv',eq.EquippedAvatarId||'N/A');
+  set('rBn',eq.EquippedBannerId||'N/A');
+  set('rBdg',eq.EquippedBPBadges||'N/A');
+  set('rBpId',eq.EquippedBPID||'N/A');
+  set('rSeason','Season: '+(acc.AccountSeasonId||'N/A'));
+
+  document.getElementById('result').classList.add('show');
+}
+
+document.getElementById('uidInput').addEventListener('keydown',e=>{if(e.key==='Enter')search();});
+</script>
+</body>
+</html>
