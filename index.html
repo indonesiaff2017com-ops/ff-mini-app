@@ -312,7 +312,7 @@ async function search(){
   document.getElementById('loading').classList.add('show');
   btn.disabled=true;
   try{
-    let url=`/api?uid=${uid}`;
+    let url=`/api/player?uid=${uid}`;
     if(region)url+=`&region=${region}`;
     const res=await fetch(url);
     const d=await res.json();
