@@ -1,7 +1,7 @@
 {
   "version": 2,
   "routes": [
-    { "src": "/api", "dest": "/api.js" },
+    { "src": "/api/player", "dest": "/api/player.js" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
