@@ -1,4 +1,5 @@
 // FF Lookup API — Developed by Sazid 17k
+const https = require("https");
 
 const API_KEYS = [
   process.env.API_KEY_1,
@@ -13,20 +14,37 @@ const API_KEYS = [
   process.env.API_KEY_10,
 ].filter(Boolean);
 
-const FF_API = "https://api.gameskinbo.com/ff-info/get";
-
 function randomKey() {
   return API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
 }
 
+function httpGet(url, apiKey) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      headers: { "x-api-key": apiKey },
+      timeout: 15000,
+    };
+    https.get(url, options, (res) => {
+      let data = "";
+      res.on("data", (chunk) => (data += chunk));
+      res.on("end", () => {
+        try {
+          resolve({ status: res.statusCode, body: JSON.parse(data) });
+        } catch (e) {
+          resolve({ status: res.statusCode, body: {} });
+        }
+      });
+    }).on("error", reject).on("timeout", () => reject(new Error("timeout")));
+  });
+}
+
 function sleep(ms) {
-  return new Promise(r => setTimeout(r, ms));
+  return new Promise((r) => setTimeout(r, ms));
 }
 
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
 
@@ -44,25 +62,17 @@ module.exports = async function handler(req, res) {
     while (tried.has(key) && t++ < API_KEYS.length) key = randomKey();
     tried.add(key);
 
-    const params = new URLSearchParams({ uid });
-    if (region) params.append("region", region);
+    let url = `https://api.gameskinbo.com/ff-info/get?uid=${uid}`;
+    if (region) url += `&region=${region}`;
 
     try {
-      const r = await fetch(`${FF_API}?${params}`, {
-        headers: { "x-api-key": key },
-        signal: AbortSignal.timeout(15000),
-      });
+      const r = await httpGet(url, key);
 
-      if (r.status === 200) {
-        const data = await r.json();
-        return res.status(200).json(data);
-      }
-
+      if (r.status === 200) return res.status(200).json(r.body);
       if (r.status === 429) { await sleep(600); continue; }
       if (r.status === 402 || r.status === 404) {
         return res.status(404).json({ error: "UID পাওয়া যায়নি!" });
       }
-
     } catch (e) {
       await sleep(500);
     }
